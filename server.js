@@ -26,10 +26,13 @@ app.use((req, res, next) => {
 // Routes
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const productRoutes = require('./routes/products');
 const paymentRoutes = require('./routes/payment');
 const complaintRoutes = require('./routes/complaint');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/products', productRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/complaints', complaintRoutes);
 
