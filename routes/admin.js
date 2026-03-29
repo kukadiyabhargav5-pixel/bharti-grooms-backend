@@ -231,6 +231,22 @@ router.get('/orders', async (req, res) => {
       } else {
         orderObj.user = null;
       }
+
+      // Automatic Image Healing: Fix corrupted paths on the fly
+      if (orderObj.products && orderObj.products.length > 0) {
+        orderObj.products = await Promise.all(orderObj.products.map(async (p) => {
+          if (!p.photo || p.photo.length < 5) {
+            const actualProduct = await Product.findOne({ name: p.name });
+            if (actualProduct && actualProduct.images && actualProduct.images.length > 0) {
+              p.photo = actualProduct.images[0];
+            } else if (actualProduct && actualProduct.photo) {
+              p.photo = actualProduct.photo;
+            }
+          }
+          return p;
+        }));
+      }
+
       return orderObj;
     }));
     res.json(orders);
@@ -244,14 +260,28 @@ router.get('/orders/view/:id', async (req, res) => {
   try {
     const orderRaw = await Order.findById(req.params.id);
     if (!orderRaw) return res.status(404).json({ message: 'Order not found' });
-    
     const order = orderRaw.toObject();
     if (order.user && mongoose.Types.ObjectId.isValid(order.user)) {
       order.user = await User.findById(order.user).select('name email mobileNumber');
     } else {
       order.user = null;
     }
-    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    // Automatic Image Healing: Fix corrupted paths on the fly
+    if (order.products && order.products.length > 0) {
+      order.products = await Promise.all(order.products.map(async (p) => {
+        if (!p.photo || p.photo.length < 5) {
+          const actualProduct = await Product.findOne({ name: p.name });
+          if (actualProduct && actualProduct.images && actualProduct.images.length > 0) {
+            p.photo = actualProduct.images[0];
+          } else if (actualProduct && actualProduct.photo) {
+            p.photo = actualProduct.photo;
+          }
+        }
+        return p;
+      }));
+    }
+
     res.json(order);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching order details', error: error.message });
