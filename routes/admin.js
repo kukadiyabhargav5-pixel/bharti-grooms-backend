@@ -255,8 +255,8 @@ router.get('/orders', async (req, res) => {
   }
 });
 
-// GET /api/admin/orders/view/:id
-router.get('/orders/view/:id', async (req, res) => {
+// GET /api/admin/orders/:id
+router.get('/orders/:id', async (req, res) => {
   try {
     const orderRaw = await Order.findById(req.params.id);
     if (!orderRaw) return res.status(404).json({ message: 'Order not found' });
