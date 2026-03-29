@@ -1,17 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const path = require('path');
-const multer = require('multer');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
-
-// Multer Config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
-});
-const upload = multer({ storage: storage });
+const { upload } = require('../config/cloudinary');
 
 // GET /api/admin/stats
 router.get('/stats', async (req, res) => {
@@ -267,9 +260,11 @@ router.delete('/orders/:id', async (req, res) => {
 router.post('/products', upload.array('images', 5), async (req, res) => {
   try {
     const { name, price, category, initialStock, specifications } = req.body;
-    const stock = parseInt(initialStock) || 0;
-    const images = req.files.map(file => `/uploads/${file.filename}`);
-    
+    const stock = parseInt(initialStock) || parseInt(req.body.stock) || 0;
+
+    // Cloudinary returns secure_url for each uploaded file
+    const images = req.files.map(file => file.path);
+
     // Parse specifications if sent as stringified JSON
     let parsedSpecs = specifications;
     if (typeof specifications === 'string') {
