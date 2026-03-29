@@ -196,11 +196,33 @@ const sendOrderConfirmationEmail = async (toEmail, customerName, order) => {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       ${itemsHtml}
                     </table>
-                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;">
+                    
+                    <!-- Payment Details Table -->
+                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px; border-top: 1px solid #f2f2f2; padding-top: 15px;">
                       <tr>
-                        <td style="padding:15px 0;text-align:right;">
-                          <span style="font-size:13px;color:#999999;text-transform:uppercase;letter-spacing:1px;">Grand Total</span>
-                          <span style="font-size:18px;color:#600018;font-weight:bold;margin-left:20px;">₹${order.totalAmount?.toLocaleString()}</span>
+                        <td style="padding: 5px 0;">
+                          <span style="font-size:12px;color:#999999;text-transform:uppercase;letter-spacing:1px;">Payment Method</span>
+                        </td>
+                        <td style="padding: 5px 0; text-align: right;">
+                          <span style="font-size:13px;color:#333333;font-weight:600;">${order.payment?.method || 'N/A'}</span>
+                        </td>
+                      </tr>
+                      ${order.payment?.transactionId ? `
+                      <tr>
+                        <td style="padding: 5px 0;">
+                          <span style="font-size:12px;color:#999999;text-transform:uppercase;letter-spacing:1px;">Transaction ID</span>
+                        </td>
+                        <td style="padding: 5px 0; text-align: right;">
+                          <span style="font-size:13px;color:#333333;font-weight:600;">#${order.payment.transactionId}</span>
+                        </td>
+                      </tr>
+                      ` : ''}
+                      <tr>
+                        <td style="padding: 15px 0; border-top: 1px solid #f2f2f2; margin-top: 10px;">
+                          <span style="font-size:13px;color:#999999;text-transform:uppercase;letter-spacing:1px;font-weight:bold;">Grand Total</span>
+                        </td>
+                        <td style="padding: 15px 0; text-align: right; border-top: 1px solid #f2f2f2;">
+                          <span style="font-size:20px;color:#600018;font-weight:bold;">₹${order.totalAmount?.toLocaleString()}</span>
                         </td>
                       </tr>
                     </table>
