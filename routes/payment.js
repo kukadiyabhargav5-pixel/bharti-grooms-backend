@@ -56,7 +56,7 @@ router.post('/verify', async (req, res) => {
           name: item.name,
           price: item.price,
           quantity: item.quantity,
-          photo: item.images?.[0] || '' 
+          photo: (Array.isArray(item.images) ? item.images[0] : (item.images || item.photo || ''))
         })),
         totalAmount: orderDetails.totalAmount,
         status: 'Pending',
@@ -103,7 +103,7 @@ router.post('/verify-cod', async (req, res) => {
         name: item.name,
         price: item.price,
         quantity: item.quantity,
-        photo: item.images?.[0] || ''
+        photo: (Array.isArray(item.images) ? item.images[0] : (item.images || item.photo || ''))
       })),
       totalAmount: orderDetails.totalAmount,
       status: 'Pending',
