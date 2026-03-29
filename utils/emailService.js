@@ -1,13 +1,16 @@
 const nodemailer = require('nodemailer');
 
-// Create reusable transporter using Gmail SMTP
+// Create reusable transporter using Gmail SMTP (Configuration via Env)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'bhartiglooms@gmail.com',
-    pass: 'rfko ehhq sicp pagn' // Gmail App Password
+    user: process.env.EMAIL_USER || 'bhartiglooms@gmail.com',
+    pass: process.env.EMAIL_PASS || 'rfko ehhq sicp pagn'
   }
 });
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://bhartiglooms.in';
+const COMPANY_EMAIL = process.env.EMAIL_USER || 'bhartiglooms@gmail.com';
 
 // Verify connection configuration
 transporter.verify(function (error, success) {
@@ -21,7 +24,7 @@ transporter.verify(function (error, success) {
 // ─── Welcome Email (Professional Business Redesign) ─────────────────────────
 const sendWelcomeEmail = async (toEmail, userName) => {
   const mailOptions = {
-    from: '"Bharti Glooms 🌸" <bhartiglooms@gmail.com>',
+    from: `"Bharti Glooms 🌸" <${COMPANY_EMAIL}>`,
     to: toEmail,
     subject: '🌸 Welcome to Bharti Glooms – A New Era of Premium Ethnic Wear!',
     html: `
@@ -55,7 +58,7 @@ const sendWelcomeEmail = async (toEmail, userName) => {
 
                     <!-- CTA Section -->
                     <div style="text-align:center;margin-bottom:40px;">
-                      <a href="http://localhost:5173" style="background-color:#600018;color:#ffffff;padding:15px 40px;text-decoration:none;font-size:14px;font-weight:bold;letter-spacing:1px;border-radius:2px;display:inline-block;">EXPLORE OUR COLLECTIONS</a>
+                      <a href="${FRONTEND_URL}" style="background-color:#600018;color:#ffffff;padding:15px 40px;text-decoration:none;font-size:14px;font-weight:bold;letter-spacing:1px;border-radius:2px;display:inline-block;">EXPLORE OUR COLLECTIONS</a>
                     </div>
 
                     <!-- Company Story Section -->
@@ -87,9 +90,9 @@ const sendWelcomeEmail = async (toEmail, userName) => {
                   <td style="background-color:#fdfaf9;padding:35px 40px;text-align:center;border-top:1px solid #eeeeee;">
                     <p style="color:#999999;font-size:12px;margin:0 0 15px;">You're receiving this email because you've joined the Bharti Glooms family.</p>
                     <p style="color:#600018;font-size:12px;font-weight:bold;margin:0;">
-                      <a href="mailto:bhartiglooms@gmail.com" style="color:#600018;text-decoration:none;">Support</a> &nbsp;|&nbsp; 
-                      <a href="#" style="color:#600018;text-decoration:none;">Our Story</a> &nbsp;|&nbsp; 
-                      <a href="#" style="color:#600018;text-decoration:none;">Privacy</a>
+                      <a href="mailto:${COMPANY_EMAIL}" style="color:#600018;text-decoration:none;">Support</a> &nbsp;|&nbsp; 
+                      <a href="${FRONTEND_URL}/our-story" style="color:#600018;text-decoration:none;">Our Story</a> &nbsp;|&nbsp; 
+                      <a href="${FRONTEND_URL}/privacy" style="color:#600018;text-decoration:none;">Privacy</a>
                     </p>
                     <p style="color:#bbbbbb;font-size:11px;margin:20px 0 0;">© 2026 Bharti Glooms. Designed for Elegance.</p>
                   </td>
@@ -139,7 +142,7 @@ const sendOrderConfirmationEmail = async (toEmail, customerName, order) => {
   const orderId = order._id?.toString().slice(-8).toUpperCase() || 'N/A';
 
   const mailOptions = {
-    from: '"Bharti Glooms 🌸" <bhartiglooms@gmail.com>',
+    from: `"Bharti Glooms 🌸" <${COMPANY_EMAIL}>`,
     to: toEmail,
     subject: `Order Recieved: Success! (ID: #${orderId})`,
     html: `
@@ -260,7 +263,7 @@ const sendOrderConfirmationEmail = async (toEmail, customerName, order) => {
                         <td width="50%" style="vertical-align:top;">
                           <h4 style="font-size:11px;color:#999999;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Customer Support</h4>
                           <p style="font-size:12px;line-height:18px;color:#555555;margin:0;">
-                            Email: bhartiglooms@gmail.com<br>
+                            Email: ${COMPANY_EMAIL}<br>
                             Working Hours: 10AM - 7PM IST
                           </p>
                         </td>
@@ -301,7 +304,7 @@ const sendOrderConfirmationEmail = async (toEmail, customerName, order) => {
 // ─── OTP Email ────────────────────────────────────────────────────────────
 const sendOtpEmail = async (toEmail, userName, otp) => {
   const mailOptions = {
-    from: '"Bharti Glooms 🌸" <bhartiglooms@gmail.com>',
+    from: `"Bharti Glooms 🌸" <${COMPANY_EMAIL}>`,
     to: toEmail,
     subject: '🔐 Your OTP for Password Reset – Bharti Glooms',
     html: `
@@ -352,8 +355,8 @@ const sendOtpEmail = async (toEmail, userName, otp) => {
 // ─── Complaint Notification Email (To Admin) ──────────────────────────────
 const sendComplaintNotification = async (name, email, subject, message) => {
   const mailOptions = {
-    from: '"Bharti Glooms Support 🌸" <bhartiglooms@gmail.com>',
-    to: 'bhartiglooms@gmail.com',
+    from: `"Bharti Glooms Support 🌸" <${COMPANY_EMAIL}>`,
+    to: COMPANY_EMAIL,
     subject: `🚨 New Inquiry: ${subject}`,
     html: `
       <!DOCTYPE html>

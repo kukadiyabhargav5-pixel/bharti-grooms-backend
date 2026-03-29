@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const { sendOrderConfirmationEmail } = require('../utils/emailService');
 
@@ -44,7 +45,7 @@ router.post('/verify', async (req, res) => {
       // Save order to database upon successful verification
       const newOrder = new Order({
         userId: orderDetails.userId,
-        user: orderDetails.userId, // Link to User model if possible
+        user: (orderDetails.userId && mongoose.Types.ObjectId.isValid(orderDetails.userId)) ? orderDetails.userId : null, 
         customer: {
           name: orderDetails.name,
           email: orderDetails.email,
@@ -55,7 +56,7 @@ router.post('/verify', async (req, res) => {
           name: item.name,
           price: item.price,
           quantity: item.quantity,
-          photo: item.images?.[0] ? `http://localhost:5000${item.images[0]}` : ''
+          photo: item.images?.[0] || '' 
         })),
         totalAmount: orderDetails.totalAmount,
         status: 'Pending',
@@ -91,7 +92,7 @@ router.post('/verify-cod', async (req, res) => {
 
     const newOrder = new Order({
       userId: orderDetails.userId,
-      user: orderDetails.userId,
+      user: (orderDetails.userId && mongoose.Types.ObjectId.isValid(orderDetails.userId)) ? orderDetails.userId : null,
       customer: {
         name: orderDetails.name,
         email: orderDetails.email,
@@ -102,7 +103,7 @@ router.post('/verify-cod', async (req, res) => {
         name: item.name,
         price: item.price,
         quantity: item.quantity,
-        photo: item.images?.[0] ? `http://localhost:5000${item.images[0]}` : ''
+        photo: item.images?.[0] || ''
       })),
       totalAmount: orderDetails.totalAmount,
       status: 'Pending',

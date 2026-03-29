@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const path = require('path');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
@@ -80,10 +81,21 @@ router.get('/stats', async (req, res) => {
     const totalIncome = globalIncomeResult.length > 0 ? globalIncomeResult[0].totalIncome : 0;
 
     // Fetch Recent Orders
-    const recentOrders = await Order.find()
-      .populate('user', 'name email')
+    // Fetch Recent Orders (Protect against CastError)
+    const recentOrdersRaw = await Order.find()
       .sort({ createdAt: -1 })
       .limit(5);
+    
+    // Manually populate (Safer than .populate if IDs might be invalid)
+    const recentOrders = await Promise.all(recentOrdersRaw.map(async (order) => {
+      const orderObj = order.toObject();
+      if (order.user && mongoose.Types.ObjectId.isValid(order.user)) {
+        orderObj.user = await User.findById(order.user).select('name email');
+      } else {
+        orderObj.user = null;
+      }
+      return orderObj;
+    }));
 
     res.json({
       totalUsers,
@@ -208,9 +220,19 @@ router.get('/orders', async (req, res) => {
   try {
     const { status } = req.query;
     const filter = status ? { status } : {};
-    const orders = await Order.find(filter)
-      .populate('user', 'name email mobileNumber')
+    // Protection against CastError on invalid ObjectIds
+    const ordersRaw = await Order.find(filter)
       .sort({ createdAt: -1 });
+
+    const orders = await Promise.all(ordersRaw.map(async (order) => {
+      const orderObj = order.toObject();
+      if (order.user && mongoose.Types.ObjectId.isValid(order.user)) {
+         orderObj.user = await User.findById(order.user).select('name email mobileNumber');
+      } else {
+        orderObj.user = null;
+      }
+      return orderObj;
+    }));
     res.json(orders);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching orders', error: error.message });
@@ -220,8 +242,15 @@ router.get('/orders', async (req, res) => {
 // GET /api/admin/orders/view/:id
 router.get('/orders/view/:id', async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id)
-      .populate('user', 'name email mobileNumber');
+    const orderRaw = await Order.findById(req.params.id);
+    if (!orderRaw) return res.status(404).json({ message: 'Order not found' });
+    
+    const order = orderRaw.toObject();
+    if (order.user && mongoose.Types.ObjectId.isValid(order.user)) {
+      order.user = await User.findById(order.user).select('name email mobileNumber');
+    } else {
+      order.user = null;
+    }
     if (!order) return res.status(404).json({ message: 'Order not found' });
     res.json(order);
   } catch (error) {
