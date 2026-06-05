@@ -6,6 +6,7 @@ const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const { upload } = require('../config/cloudinary');
+const { sendTrackingEmail } = require('../utils/emailService');
 
 // GET /api/admin/stats
 router.get('/stats', async (req, res) => {
@@ -175,12 +176,44 @@ router.delete('/users/:id', async (req, res) => {
 });
 
 // PUT /api/admin/products/:id
-router.put('/products/:id', async (req, res) => {
+router.put('/products/:id', upload.array('newImages', 5), async (req, res) => {
   try {
-    const { name, price, category } = req.body;
+    const { name, price, category, stock, specifications, existingImages } = req.body;
+    
+    // Parse specs if available
+    let parsedSpecs = {};
+    if (specifications) {
+      if (typeof specifications === 'string') {
+        try { parsedSpecs = JSON.parse(specifications); } catch(err) { parsedSpecs = {}; }
+      } else {
+        parsedSpecs = specifications;
+      }
+    }
+
+    // Process existing images to keep
+    let imagesToKeep = [];
+    if (existingImages) {
+      imagesToKeep = Array.isArray(existingImages) ? existingImages : [existingImages];
+    }
+
+    // Process new uploaded images
+    let newUploads = [];
+    if (req.files && req.files.length > 0) {
+      newUploads = req.files.map(file => file.path); // path is Cloudinary secure_url
+    }
+
+    const finalImages = [...imagesToKeep, ...newUploads];
+
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
-      { name, price, category },
+      { 
+        name, 
+        price, 
+        category,
+        stock: parseInt(stock) || 0,
+        specifications: parsedSpecs,
+        images: finalImages
+      },
       { new: true }
     );
     res.json(updatedProduct);
@@ -312,6 +345,43 @@ router.delete('/orders/:id', async (req, res) => {
     res.json({ message: 'Order deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting order', error: error.message });
+  }
+});
+
+// POST /api/admin/orders/:id/tracking
+router.post('/orders/:id/tracking', async (req, res) => {
+  try {
+    const { trackingId } = req.body;
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    
+    let customerEmail = order.customer?.email;
+    let customerName = order.customer?.name || 'Valued Customer';
+    
+    if (!customerEmail && order.user) {
+        const user = await User.findById(order.user);
+        if (user) {
+            customerEmail = user.email;
+            customerName = user.name || customerName;
+        }
+    }
+
+    if (customerEmail) {
+        try {
+            await sendTrackingEmail(customerEmail, customerName, order._id, trackingId);
+        } catch (emailErr) {
+            console.warn('Email failed but saving tracking ID anyway', emailErr);
+        }
+    }
+    
+    // Always Save the tracking id to the document
+    order.trackingId = trackingId; 
+    await order.save();
+    
+    res.json({ message: 'Tracking ID updated successfully', order });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating tracking details', error: error.message });
   }
 });
 

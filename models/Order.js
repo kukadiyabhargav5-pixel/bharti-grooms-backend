@@ -23,7 +23,8 @@ const orderSchema = new mongoose.Schema({
     method: { type: String, default: 'COD' },
     transactionId: String,
     orderId: String
-  }
+  },
+  trackingId: String
 }, { timestamps: true });
 
 module.exports = mongoose.model('Order', orderSchema);

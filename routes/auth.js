@@ -217,9 +217,9 @@ router.post('/forgot-password/send-otp', async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     otpStore[email] = { otp, expiresAt: Date.now() + 10 * 60 * 1000 }; // 10 min expiry
 
-    // Send OTP email
+    // Send OTP email (fire-and-forget for speed)
     const { sendOtpEmail } = require('../utils/emailService');
-    await sendOtpEmail(email, user.name, otp);
+    sendOtpEmail(email, user.name, otp).catch(err => console.error('OTP email error:', err));
 
     res.json({ message: 'OTP sent to your email successfully' });
   } catch (error) {

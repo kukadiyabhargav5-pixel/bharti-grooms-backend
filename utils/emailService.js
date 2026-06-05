@@ -2,10 +2,13 @@ const nodemailer = require('nodemailer');
 
 // Create reusable transporter using Gmail SMTP (Configuration via Env)
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // Use SSL
+  pool: true,
   auth: {
     user: process.env.EMAIL_USER || 'bhartiglooms@gmail.com',
-    pass: process.env.EMAIL_PASS || 'rfko ehhq sicp pagn'
+    pass: process.env.EMAIL_PASS || 'rfkoehhqsicppagn'
   }
 });
 
@@ -24,7 +27,7 @@ transporter.verify(function (error, success) {
 // ─── Welcome Email (Professional Business Redesign) ─────────────────────────
 const sendWelcomeEmail = async (toEmail, userName) => {
   const mailOptions = {
-    from: `"Bharti Glooms 🌸" <${COMPANY_EMAIL}>`,
+    from: `"Bharti Glooms" <${COMPANY_EMAIL}>`,
     to: toEmail,
     subject: '🌸 Welcome to Bharti Glooms – A New Era of Premium Ethnic Wear!',
     html: `
@@ -107,12 +110,9 @@ const sendWelcomeEmail = async (toEmail, userName) => {
     `
   };
 
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Welcome email sent to ${toEmail}`);
-  } catch (error) {
-    console.error(`❌ Failed to send welcome email:`, error.message);
-  }
+  transporter.sendMail(mailOptions)
+    .then(() => console.log(`✅ Welcome email sent to ${toEmail}`))
+    .catch((error) => console.error(`❌ Failed to send welcome email:`, error.message));
 };
 
 // ─── Order Confirmation Email (Professional Business Redesign) ───────────────────
@@ -142,7 +142,7 @@ const sendOrderConfirmationEmail = async (toEmail, customerName, order) => {
   const orderId = order._id?.toString().slice(-8).toUpperCase() || 'N/A';
 
   const mailOptions = {
-    from: `"Bharti Glooms 🌸" <${COMPANY_EMAIL}>`,
+    from: `"Bharti Glooms" <${COMPANY_EMAIL}>`,
     to: toEmail,
     subject: `Order Recieved: Success! (ID: #${orderId})`,
     html: `
@@ -315,18 +315,15 @@ const sendOrderConfirmationEmail = async (toEmail, customerName, order) => {
     `
   };
 
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Order confirmation email sent to ${toEmail}`);
-  } catch (error) {
-    console.error(`❌ Failed to send order confirmation:`, error.message);
-  }
+  transporter.sendMail(mailOptions)
+    .then(() => console.log(`✅ Order confirmation email sent to ${toEmail}`))
+    .catch((error) => console.error(`❌ Failed to send order confirmation:`, error.message));
 };
 
 // ─── OTP Email ────────────────────────────────────────────────────────────
 const sendOtpEmail = async (toEmail, userName, otp) => {
   const mailOptions = {
-    from: `"Bharti Glooms 🌸" <${COMPANY_EMAIL}>`,
+    from: `"Bharti Glooms" <${COMPANY_EMAIL}>`,
     to: toEmail,
     subject: '🔐 Your OTP for Password Reset – Bharti Glooms',
     html: `
@@ -365,19 +362,17 @@ const sendOtpEmail = async (toEmail, userName, otp) => {
       </html>
     `
   };
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ OTP email sent to ${toEmail}`);
-  } catch (error) {
-    console.error(`❌ Failed to send OTP to ${toEmail}:`, error.message);
-    throw error;
-  }
+  transporter.sendMail(mailOptions)
+    .then(() => console.log(`✅ OTP email sent to ${toEmail}`))
+    .catch((error) => {
+      console.error(`❌ Failed to send OTP to ${toEmail}:`, error.message);
+    });
 };
 
 // ─── Complaint Notification Email (To Admin) ──────────────────────────────
 const sendComplaintNotification = async (name, email, subject, message) => {
   const mailOptions = {
-    from: `"Bharti Glooms Support 🌸" <${COMPANY_EMAIL}>`,
+    from: `"Bharti Glooms Support" <${COMPANY_EMAIL}>`,
     to: COMPANY_EMAIL,
     subject: `🚨 New Inquiry: ${subject}`,
     html: `
@@ -409,65 +404,145 @@ const sendComplaintNotification = async (name, email, subject, message) => {
       </html>
     `
   };
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Complaint notification sent to admin`);
-  } catch (error) {
-    console.error(`❌ Failed to send complaint notification:`, error.message);
-  }
+  transporter.sendMail(mailOptions)
+    .then(() => console.log(`✅ Complaint notification sent to admin`))
+    .catch((error) => console.error(`❌ Failed to send complaint notification:`, error.message));
 };
 
 // Function to send a reply to a customer inquiry
 const sendReplyEmail = async (to, originalSubject, replyMessage, originalMessage) => {
   const mailOptions = {
-    from: `"Bharti Glooms Support 🌸" <${process.env.EMAIL_USER || 'bhartiglooms@gmail.com'}>`,
+    from: `"Bharti Glooms Support" <${process.env.EMAIL_USER || 'bhartiglooms@gmail.com'}>`,
     to: to,
-    subject: `Re: ${originalSubject} - Bharti Glooms Support`,
+    subject: `Official Response: ${originalSubject}`,
     html: `
-      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        <div style="background-color: #600018; padding: 30px; text-align: center;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 2px;">BHARTI GLOOMS</h1>
-          <p style="color: #fbd38d; margin: 5px 0 0; font-size: 14px; text-transform: uppercase; font-weight: 600;">Customer Support Reply</p>
-        </div>
-        
-        <div style="padding: 40px 30px; background-color: #ffffff;">
-          <p style="font-size: 16px; color: #2d3748; line-height: 1.6; margin-bottom: 25px;">
-            Hello,
-          </p>
-          
-          <div style="background-color: #f8fafc; border-left: 4px solid #600018; padding: 20px; margin-bottom: 30px; border-radius: 0 8px 8px 0;">
-            <p style="font-size: 16px; color: #1a202c; line-height: 1.8; margin: 0; font-style: italic;">
-              "${replyMessage}"
-            </p>
-          </div>
+      <!DOCTYPE html>
+      <html>
+      <body style="margin:0;padding:0;background-color:#fdfaf9;font-family:'Garamond', 'Georgia', serif;color:#333333;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fdfaf9;padding:40px 0;">
+          <tr>
+            <td align="center">
+              <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border:1px solid #d4af37;box-shadow:0 15px 35px rgba(96,0,24,0.1);overflow:hidden;border-radius:2px;">
+                
+                <!-- Luxury Header -->
+                <tr>
+                  <td style="background-color:#600018;padding:40px;text-align:center;">
+                    <h1 style="color:#d4af37;margin:0;font-size:28px;font-weight:300;letter-spacing:6px;text-transform:uppercase;">Bharti Glooms</h1>
+                    <div style="width:40px;height:1px;background-color:#d4af37;margin:15px auto;"></div>
+                    <p style="color:#ffffff;margin:0;font-size:11px;letter-spacing:3px;text-transform:uppercase;opacity:0.8;">Concierge Support Team</p>
+                  </td>
+                </tr>
 
-          <p style="font-size: 14px; color: #718096; margin-top: 40px; border-top: 1px solid #edf2f7; padding-top: 20px;">
-            Thank you for reaching out to us. If you have any further questions, please feel free to reply to this email.
-          </p>
-        </div>
+                <!-- Greeting & Message -->
+                <tr>
+                  <td style="padding:50px 45px;">
+                    <h2 style="color:#600018;font-size:20px;margin:0 0 25px;font-weight:400;">Warm Greetings,</h2>
+                    
+                    <p style="font-size:16px;line-height:28px;color:#4a5568;margin-bottom:30px;font-style:italic;background:rgba(212,175,55,0.05);padding:25px;border-left:3px solid #d4af37;border-radius:0 4px 4px 0;">
+                      "${replyMessage}"
+                    </p>
 
-        <div style="background-color: #f7fafc; padding: 25px; border-top: 1px solid #edf2f7;">
-          <p style="font-size: 12px; color: #a0aec0; margin-bottom: 10px; font-weight: 600; text-transform: uppercase;">Original Inquiry Details:</p>
-          <p style="font-size: 13px; color: #4a5568; margin: 5px 0;"><strong>Subject:</strong> ${originalSubject}</p>
-          <p style="font-size: 13px; color: #4a5568; margin: 5px 0;"><strong>Your Message:</strong> ${originalMessage}</p>
-        </div>
-        
-        <div style="background-color: #600018; padding: 20px; text-align: center;">
-          <p style="color: #ffffff; margin: 0; font-size: 12px; opacity: 0.8;">
-            © ${new Date().getFullYear()} Bharti Glooms. Designed for Elegance.
-          </p>
-        </div>
-      </div>
+                    <p style="font-size:15px;line-height:24px;color:#555555;margin-bottom:40px;">
+                      We hope this information helps. At Bharti Glooms, we are committed to ensuring your experience with our ethnic collections is nothing short of exceptional.
+                    </p>
+
+                    <div style="border-top:1px solid #f1f5f9;padding-top:25px;margin-top:20px;">
+                      <p style="margin:0;font-size:14px;color:#600018;font-weight:bold;">Kind Regards,</p>
+                      <p style="margin:4px 0 0;font-size:14px;color:#333333;">Bharti Glooms Support Console</p>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Original Message Context -->
+                <tr>
+                  <td style="background-color:#f9f9f9;padding:30px 45px;border-top:1px solid #eeeeee;">
+                    <h4 style="color:#999999;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin:0 0 10px;">Inquiry Reference</h4>
+                    <p style="font-size:13px;color:#666666;margin:0;"><strong>Subject:</strong> ${originalSubject}</p>
+                    <p style="font-size:12px;color:#888888;margin:5px 0 0;line-height:1.5;"><strong>Your Message:</strong> ${originalMessage}</p>
+                  </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color:#ffffff;padding:30px;text-align:center;border-top:1px solid #f1f5f9;">
+                    <p style="color:#bbbbbb;font-size:10px;margin:0;">© 2026 Bharti Glooms. Handcrafted Elegance.</p>
+                    <p style="color:#600018;font-size:10px;margin:10px 0 0;font-weight:bold;">
+                      <a href="https://bhartiglooms.in" style="color:#600018;text-decoration:none;">Visit Boutique</a> &nbsp; | &nbsp; 
+                      <a href="mailto:bhartiglooms@gmail.com" style="color:#600018;text-decoration:none;">Global Support</a>
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
     `
   };
 
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Reply email sent to ${to}`);
-  } catch (error) {
-    console.error('❌ Error sending reply email:', error);
-    throw error;
-  }
+  transporter.sendMail(mailOptions)
+    .then(() => console.log(`✅ Reply email sent successfully to ${to}`))
+    .catch((error) => {
+      console.error('❌ Error sending reply email:', error);
+    });
+};
+
+// ─── Order Tracking Dispatch Email ──────────────────────────────────────────
+const sendTrackingEmail = async (toEmail, customerName, orderId, trackingId) => {
+  const shortOrderId = orderId?.toString().slice(-8).toUpperCase() || 'N/A';
+  const mailOptions = {
+    from: `"Bharti Glooms" <${COMPANY_EMAIL}>`,
+    to: toEmail,
+    subject: `🚚 Shipment Dispatched: Order #${shortOrderId}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI', Arial, sans-serif;color:#333333;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0;">
+          <tr>
+            <td align="center">
+              <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:6px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.05);">
+                <tr>
+                  <td style="background-color:#600018;padding:35px;text-align:center;">
+                    <h1 style="color:#ffffff;margin:0;font-size:22px;letter-spacing:3px;text-transform:uppercase;">Package Dispatched</h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:40px;">
+                    <p style="font-size:16px;color:#333333;margin:0 0 15px;">Dear <strong>${customerName}</strong>,</p>
+                    <p style="font-size:14px;line-height:24px;color:#555555;margin:0 0 30px;">
+                      Great news! Your recent order from Bharti Glooms has been packed, handed over to our logistics partner, and is now officially on its way to your destination.
+                    </p>
+                    
+                    <div style="background-color:#f8f5f2;border:1px solid #e2d5c8;border-radius:4px;padding:25px;text-align:center;margin-bottom:30px;">
+                      <p style="color:#888888;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 10px;">Your Tracking/AWB ID</p>
+                      <h2 style="color:#600018;font-size:26px;letter-spacing:4px;margin:0;">${trackingId}</h2>
+                    </div>
+
+                    <p style="font-size:13px;line-height:22px;color:#666666;margin:0 0 20px;">
+                      You can use this tracking ID on our logistics partner's website to track the live movement of your package. Please allow up to 24 hours for tracking data to sync globally.
+                    </p>
+
+                    <hr style="border:none;border-top:1px solid #eeeeee;margin:30px 0;">
+                    
+                    <p style="margin:0;font-size:14px;color:#333333;font-weight:bold;">Bharti Glooms Support</p>
+                    <p style="margin:5px 0 0;font-size:12px;color:#888888;">If you face any issues, feel free to respond to this email.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `
+  };
+
+  transporter.sendMail(mailOptions)
+    .then(() => console.log(`✅ Tracking email sent to ${toEmail}`))
+    .catch((error) => console.error(`❌ Failed to send tracking email:`, error.message));
 };
 
 module.exports = { 
@@ -475,5 +550,6 @@ module.exports = {
   sendOrderConfirmationEmail, 
   sendOtpEmail, 
   sendComplaintNotification,
-  sendReplyEmail
+  sendReplyEmail,
+  sendTrackingEmail
 };

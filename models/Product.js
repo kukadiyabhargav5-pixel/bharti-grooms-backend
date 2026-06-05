@@ -7,7 +7,7 @@ const productSchema = new mongoose.Schema({
   category: { 
     type: String, 
     required: true,
-    enum: ['Saree', 'Kurti', 'Lehenga', 'Tunic', 'Dupatta']
+    enum: ['Saree', 'Kurtas & Suits', 'Lehenga Choli', 'Gowns', 'Anarkali']
   },
   stock: { type: Number, default: 0 },
   specifications: { type: Map, of: String, default: {} },

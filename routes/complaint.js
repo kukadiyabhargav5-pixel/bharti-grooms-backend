@@ -17,12 +17,15 @@ router.post('/:id/reply', async (req, res) => {
       return res.status(404).json({ message: 'Inquiry not found' });
     }
 
-    console.log('📧 Sending email to:', complaint.email);
-    // Send email to customer
-    await sendReplyEmail(complaint.email, complaint.subject, replyMessage, complaint.message);
+    console.log('📧 Starting background email delivery to:', complaint.email);
+    
+    // Send email to customer (Non-blocking for faster UI response)
+    sendReplyEmail(complaint.email, complaint.subject, replyMessage, complaint.message)
+      .then(() => console.log(`✅ Background email sent to ${complaint.email}`))
+      .catch(err => console.error('💥 Background Email Error:', err));
 
-    console.log('✅ Email sent, removing inquiry from database...');
-    // Delete the complaint after successful reply (as requested)
+    console.log('🗑️ Removing inquiry from database...');
+    // Delete the complaint immediately
     await Complaint.findByIdAndDelete(req.params.id);
 
     res.json({ message: 'Reply sent successfully and inquiry removed' });
@@ -69,8 +72,8 @@ router.post('/', async (req, res) => {
 
     await newComplaint.save();
 
-    // Send email notification to admin
-    await sendComplaintNotification(name, email, subject, message);
+    // Send email notification to admin (fire-and-forget)
+    sendComplaintNotification(name, email, subject, message).catch(err => console.error('Complaint notification error:', err));
 
     res.status(201).json({ message: 'Complaint submitted successfully' });
   } catch (error) {
@@ -98,6 +101,22 @@ router.put('/:id/status', async (req, res) => {
     res.json(complaint);
   } catch (error) {
     console.error('Update Complaint Status Error:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+// @route   GET /api/complaints/:id
+// @desc    Get a single complaint by ID (Admin only)
+// @access  Private (Admin)
+router.get('/:id', async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint) {
+      return res.status(404).json({ message: 'Inquiry not found' });
+    }
+    res.json(complaint);
+  } catch (error) {
+    console.error('Fetch Single Complaint Error:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });

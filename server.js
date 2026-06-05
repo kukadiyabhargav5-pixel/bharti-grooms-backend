@@ -9,8 +9,27 @@ dotenv.config();
 const app = express();
 
 // Middleware
+const allowedOrigins = [
+  'https://www.bhartiglooms.in',
+  'https://bhartiglooms.in',
+  'https://bharti-grooms-frontend.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
 app.use(cors({
-  origin: true, // Allow all origins during development debugging
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    // Allow all Vercel preview URLs for the project
+    if (origin.includes('bharti-grooms-frontend') && origin.includes('vercel.app')) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 app.use(express.json());
@@ -39,7 +58,11 @@ app.use('/api/complaints', complaintRoutes);
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ message: 'Bharti Glooms API is running!' });
+  res.json({ message: 'Bharti Glooms API is running!', status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
 // Global Error Handler
@@ -50,13 +73,38 @@ app.use((err, req, res, next) => {
 
 // Connect to MongoDB and start server
 const PORT = process.env.PORT || 5000;
+const BACKEND_URL = process.env.BACKEND_URL || `https://bharti-grooms-backend.onrender.com`;
 
-console.log('⏳ Connecting to MongoDB at:', process.env.MONGO_URI);
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected successfully');
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
+
+      // ── KEEP-ALIVE SELF-PING (Prevents Render free tier sleep) ──
+      // Pings itself every 14 minutes to stay awake
+      if (process.env.NODE_ENV === 'production') {
+        const https = require('https');
+        const http = require('http');
+
+        const pingServer = () => {
+          const url = `${BACKEND_URL}/api/health`;
+          const protocol = url.startsWith('https') ? https : http;
+          protocol.get(url, (res) => {
+            console.log(`♻️ Keep-alive ping: ${res.statusCode} at ${new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })} IST`);
+          }).on('error', (err) => {
+            console.log(`⚠️ Keep-alive ping failed: ${err.message}`);
+          });
+        };
+
+        // First ping after 2 minutes, then every 14 minutes
+        setTimeout(() => {
+          pingServer();
+          setInterval(pingServer, 14 * 60 * 1000); // every 14 min
+        }, 2 * 60 * 1000);
+
+        console.log('✅ Keep-alive self-ping scheduled (every 14 min)');
+      }
     });
   })
   .catch((err) => {
